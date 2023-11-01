@@ -1,12 +1,16 @@
 #include <Adafruit_Fingerprint.h>
 #include <SoftwareSerial.h>
+using namespace std;
 #include<string>
+#include<vector>
 #include <ESP8266WiFi.h>
-WiFiServer server(80);
+#include <ESP8266WebServer.h>
+
+ESP8266WebServer server(80);
 
 
-// const char* ssid = "iPhone ";
-// const char* wifi_password = "12345678";
+const char* ssid = "iPhone ";
+const char* wifi_password = "12345678";
 
 
 class member 
@@ -16,7 +20,14 @@ class member
     int id;
     bool inside_status;
 
+    member(const String& n, int i, bool inside) : name(n), id(i), inside_status(inside) {}
+
+
 };
+
+
+vector<member> members;
+
 
 SoftwareSerial mySerial(4, 5);
 
@@ -34,15 +45,21 @@ void setup() {
   Serial.begin(57600);
   
   delay(100);
-  //   WiFi.begin(ssid, wifi_password);
+    WiFi.begin(ssid, wifi_password);
 
-  // while (WiFi.status() != WL_CONNECTED) {
-  //   delay(1000);
-  //   Serial.println("Connecting to WiFi...");
-  // }
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
 
-  // Serial.println("Connected to WiFi");
-  // server.begin();
+  Serial.println("Connected to WiFi");
+  Serial.print("Local IP address: ");
+  Serial.println(WiFi.localIP());
+  server.on("/", HTTP_GET, handleRoot);
+
+  server.begin();
+    Serial.println("HTTP server started");
+
 
   Serial.println("\n\nAdafruit Fingerprint sensor enrollment");
   finger.begin(57600);
@@ -76,19 +93,28 @@ uint8_t readnumber(void) {
 }
 
 void enroll() {
-  Serial.println("Ready to enroll a fingerprint!");
-  Serial.println("Please type in the ID # (from 1 to 127) you want to save this finger as...");
-  id = readnumber();
-  if (id == 0) {// ID #0 not allowed, try again!
+
+   Serial.println("Ready to enroll a fingerprint!");
+       Serial.println("Enter Your Name");
+       Serial.read();
+  
+       while (!Serial.available()); // Wait for input
+       String temp_name = Serial.readStringUntil('\n');
+       Serial.println("type the #ID you want to store this person as: ");
+
+       int iD = readnumber();
+
+      
+  if (iD == 0) {// ID #0 not allowed, try again!
     return;
   }
   Serial.print("Enrolling ID #");
-  Serial.println(id);
+  Serial.println(iD);
 
-  while (!getFingerprintEnroll());
+  while (!getFingerprintEnroll(iD,temp_name));
 }
 
-uint8_t getFingerprintEnroll() {
+uint8_t getFingerprintEnroll(uint8_t id,String name) {
   int p = -1;
   Serial.print("Waiting for a valid finger to enroll as #"); Serial.println(id);
   while (p != FINGERPRINT_OK) {
@@ -193,6 +219,18 @@ uint8_t getFingerprintEnroll() {
   p = finger.createModel();
   if (p == FINGERPRINT_OK) {
     Serial.println("Prints matched!");
+    member temp_member(name,id,true);
+     
+    members.push_back(temp_member);
+
+
+
+
+
+
+
+
+
   } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
     Serial.println("Communication error");
     return p;
@@ -296,21 +334,8 @@ uint8_t getFingerprintID() {
 }
 
 void loop() {
+    server.handleClient(); // Handle incoming client requests
 
-   WiFiClient client = server.available();
-   
-  // if (client) {
-  //   Serial.println("New client connected");
-  //   String response = getJsonData(); // Create JSON data containing object details
-
-  //   client.println("HTTP/1.1 200 OK");
-  //   client.println("Content-Type: application/json");
-  //   client.println("Connection: close");
-  //   client.println();
-  //   client.println(response);
-  //   client.stop();
-  //   Serial.println("Client disconnected");
-  // }
 
 
 
@@ -330,7 +355,21 @@ void loop() {
   
 
     if (enteredPassword == password) {
-      enroll();
+      //  Serial.println("Ready to enroll a fingerprint!");
+      //  Serial.println("Enter Your Name");
+      //  Serial.read();
+  
+      //  while (!Serial.available()); // Wait for input
+      //  String temp_name = Serial.readStringUntil('\n');
+      //  Serial.println("type the #ID you want to store this person as: ");
+
+      //  int iD = readnumber();
+
+      //   member temp_member(temp_name,iD,true);
+     
+      //   members.push_back(temp_member);
+       
+       enroll();
     } 
     else {
       Serial.print(enteredPassword);
@@ -364,6 +403,7 @@ void loop() {
 
     if (enteredPassword == password) {
        finger.emptyDatabase();
+       members.clear();
        Serial.println("database is now empty");
     } 
     else {
@@ -376,14 +416,38 @@ void loop() {
   }
 }
 
-// String getJsonData() {
-//   member obj;
-//   obj.name = "Object1";
-//   obj.id = 42;
 
-//   // Convert the object data to JSON
-//   String json = "{\"name\":\"" + obj.name + "\", \"id\":" + String(obj.id) + "}";
-//   return json;
+
+// void handleRoot() {
+//   String html = "<html><body>";
+//   html += "<h1>Member Data</h1>";
+//   html += "<table border='1'><tr><th>Name</th><th>ID</th><th>Inside Status</th></tr>";
+
+//   for (const member& m : members) {
+//     html += "<tr><td>" + m.name + "</td><td>" + String(m.id) + "</td><td>" + (m.inside_status ? "Inside" : "Outside") + "</td></tr>";
+//   }
+
+//   html += "</table>";
+//   html += "</body></html>";
+
+//   server.send(200, "text/html", html);
 // }
+
+void handleRoot() {
+  String html = "<html><head><meta http-equiv='refresh' content='10'></head><body>"; // Refresh every 10 seconds
+  html += "<h1>Member Data</h1>";
+  html += "<table border='1'><tr><th>Name</th><th>ID</th><th>Inside Status</th></tr>";
+
+  for (const member& m : members) {
+    html += "<tr><td>" + m.name + "</td><td>" + String(m.id) + "</td><td>" + (m.inside_status ? "Inside" : "Outside") + "</td></tr>";
+  }
+
+  html += "</table>";
+  html += "</body></html>";
+
+  server.send(200, "text/html", html);
+}
+
+
 
 
