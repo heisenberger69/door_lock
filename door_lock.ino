@@ -1,7 +1,22 @@
 #include <Adafruit_Fingerprint.h>
 #include <SoftwareSerial.h>
+#include<string>
+#include <ESP8266WiFi.h>
+WiFiServer server(80);
 
 
+// const char* ssid = "iPhone ";
+// const char* wifi_password = "12345678";
+
+
+class member 
+{
+  public:
+    String name;
+    int id;
+    bool inside_status;
+
+};
 
 SoftwareSerial mySerial(4, 5);
 
@@ -19,6 +34,16 @@ void setup() {
   Serial.begin(57600);
   
   delay(100);
+  //   WiFi.begin(ssid, wifi_password);
+
+  // while (WiFi.status() != WL_CONNECTED) {
+  //   delay(1000);
+  //   Serial.println("Connecting to WiFi...");
+  // }
+
+  // Serial.println("Connected to WiFi");
+  // server.begin();
+
   Serial.println("\n\nAdafruit Fingerprint sensor enrollment");
   finger.begin(57600);
 
@@ -271,9 +296,28 @@ uint8_t getFingerprintID() {
 }
 
 void loop() {
+
+   WiFiClient client = server.available();
+   
+  // if (client) {
+  //   Serial.println("New client connected");
+  //   String response = getJsonData(); // Create JSON data containing object details
+
+  //   client.println("HTTP/1.1 200 OK");
+  //   client.println("Content-Type: application/json");
+  //   client.println("Connection: close");
+  //   client.println();
+  //   client.println(response);
+  //   client.stop();
+  //   Serial.println("Client disconnected");
+  // }
+
+
+
+
   int n;
   Serial.read();
-  Serial.println("Enter 2 to enroll a fingerprint or 3 to verify: ");
+  Serial.println("Enter 2 to enroll a fingerprint or 3 to verify or 4 to empty database: ");
   
   while (!Serial.available());
   n = Serial.parseInt();
@@ -310,9 +354,36 @@ void loop() {
       Serial.println("Fingerprint not verified.");
     }
   } 
+  else if(n == 4)
+{
+  Serial.read();
+    Serial.println("Enter password: ");
+    while (!Serial.available()); // Wait for input
+    int enteredPassword = Serial.parseInt();
+  
+
+    if (enteredPassword == password) {
+       finger.emptyDatabase();
+       Serial.println("database is now empty");
+    } 
+    else {
+      Serial.print(enteredPassword);
+      Serial.println(" is not the correct password.");
+    }
+  } 
   else {
     Serial.println("Invalid input, please try again.");
   }
 }
+
+// String getJsonData() {
+//   member obj;
+//   obj.name = "Object1";
+//   obj.id = 42;
+
+//   // Convert the object data to JSON
+//   String json = "{\"name\":\"" + obj.name + "\", \"id\":" + String(obj.id) + "}";
+//   return json;
+// }
 
 
