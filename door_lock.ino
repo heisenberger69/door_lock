@@ -1,19 +1,11 @@
 #include <Adafruit_Fingerprint.h>
 #include <SoftwareSerial.h>
 
-#if (defined(__AVR__) || defined(ESP8266)) && !defined(__AVR_ATmega2560__)
-// For UNO and others without hardware serial, we must use software serial...
-// pin #2 is IN from sensor (GREEN wire)
-// pin #3 is OUT from arduino  (WHITE wire)
-// Set up the serial port to use softwareserial..
-SoftwareSerial mySerial(2, 3);
 
-#else
-// On Leonardo/M0/etc, others with hardware serial, use hardware serial!
-// #0 is green wire, #1 is white
-#define mySerial Serial1
 
-#endif
+SoftwareSerial mySerial(4, 5);
+
+
 
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 
@@ -24,12 +16,10 @@ bool isPasswordCorrect = false;
 
 
 void setup() {
-  Serial.begin(9600);
-  while (!Serial);  // For Yun/Leo/Micro/Zero/...
+  Serial.begin(57600);
+  
   delay(100);
   Serial.println("\n\nAdafruit Fingerprint sensor enrollment");
-
-  // set the data rate for the sensor serial port
   finger.begin(57600);
 
   if (finger.verifyPassword()) {
@@ -50,7 +40,6 @@ void setup() {
   Serial.print(F("Baud rate: ")); Serial.println(finger.baud_rate);
 }
 
-// ... rest of the code remains unchanged ...
 
 uint8_t readnumber(void) {
   uint8_t num = 0;
@@ -305,19 +294,22 @@ void loop() {
     }
   } 
 
-  else if (n == 3) {
-    // Continuously capture a fingerprint image until a finger is detected
+   else if (n == 3) {
+    // Fingerprint verification
+    Serial.println("Place your finger on the sensor...");
     while (finger.getImage() != FINGERPRINT_OK) {
-      Serial.println("Place your finger on the sensor...");
+    
       delay(500);
     }
+    
     int fingerprintID = getFingerprintID(); // Verify the fingerprint
+    
     if (fingerprintID != -1) {
       Serial.println("Fingerprint verified!");
     } else {
       Serial.println("Fingerprint not verified.");
     }
-  }
+  } 
   else {
     Serial.println("Invalid input, please try again.");
   }
