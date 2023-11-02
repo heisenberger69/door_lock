@@ -61,7 +61,7 @@ void setup() {
     Serial.println("HTTP server started");
 
 
-  Serial.println("\n\nAdafruit Fingerprint sensor enrollment");
+  // Serial.println("\n\nAdafruit Fingerprint sensor enrollment");
   finger.begin(57600);
 
   if (finger.verifyPassword()) {
@@ -71,15 +71,15 @@ void setup() {
     while (1) { delay(1); }
   }
 
-  Serial.println(F("Reading sensor parameters"));
+  // Serial.println(F("Reading sensor parameters"));
   finger.getParameters();
-  Serial.print(F("Status: 0x")); Serial.println(finger.status_reg, HEX);
-  Serial.print(F("Sys ID: 0x")); Serial.println(finger.system_id, HEX);
-  Serial.print(F("Capacity: ")); Serial.println(finger.capacity);
-  Serial.print(F("Security level: ")); Serial.println(finger.security_level);
-  Serial.print(F("Device address: ")); Serial.println(finger.device_addr, HEX);
-  Serial.print(F("Packet len: ")); Serial.println(finger.packet_len);
-  Serial.print(F("Baud rate: ")); Serial.println(finger.baud_rate);
+  // Serial.print(F("Status: 0x")); Serial.println(finger.status_reg, HEX);
+  // Serial.print(F("Sys ID: 0x")); Serial.println(finger.system_id, HEX);
+  // Serial.print(F("Capacity: ")); Serial.println(finger.capacity);
+  // Serial.print(F("Security level: ")); Serial.println(finger.security_level);
+  // Serial.print(F("Device address: ")); Serial.println(finger.device_addr, HEX);
+  // Serial.print(F("Packet len: ")); Serial.println(finger.packet_len);
+  // Serial.print(F("Baud rate: ")); Serial.println(finger.baud_rate);
 }
 
 
@@ -221,7 +221,8 @@ uint8_t getFingerprintEnroll(uint8_t id,String name) {
     Serial.println("Prints matched!");
     member temp_member(name,id,true);
      
-    members.push_back(temp_member);
+    // members.push_back(temp_member);
+    members.assign(id,temp_member);
 
 
 
@@ -375,7 +376,9 @@ void loop() {
       Serial.print(enteredPassword);
       Serial.println(" is not the correct password.");
     }
+    server.handleClient();
   } 
+  
 
    else if (n == 3) {
     // Fingerprint verification
@@ -389,9 +392,13 @@ void loop() {
     
     if (fingerprintID != -1) {
       Serial.println("Fingerprint verified!");
+
+
+
     } else {
       Serial.println("Fingerprint not verified.");
     }
+    server.handleClient();
   } 
   else if(n == 4)
 {
@@ -410,6 +417,7 @@ void loop() {
       Serial.print(enteredPassword);
       Serial.println(" is not the correct password.");
     }
+    server.handleClient();
   } 
   else {
     Serial.println("Invalid input, please try again.");
