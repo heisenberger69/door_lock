@@ -83,6 +83,22 @@ void setup() {
 }
 
 
+member& getMemberByID(int memberID) 
+{
+
+  for ( member& m : members) 
+  {
+    if (m.id == memberID) 
+    {
+     return m;
+    }
+  
+  }
+  return members[0];
+  
+
+}  
+
 uint8_t readnumber(void) {
   uint8_t num = 0;
   while (num == 0) {
@@ -219,10 +235,11 @@ uint8_t getFingerprintEnroll(uint8_t id,String name) {
   p = finger.createModel();
   if (p == FINGERPRINT_OK) {
     Serial.println("Prints matched!");
-    member temp_member(name,id,true);
+    member temp_member(name,id,false);
      
-    // members.push_back(temp_member);
-    members.assign(id,temp_member);
+    members.push_back(temp_member);
+    // members.assign(id,temp_member);
+    // members.at(id) = temp_member;
 
 
 
@@ -328,8 +345,14 @@ uint8_t getFingerprintID() {
   }
 
   // found a match!
-  Serial.print("Found ID #"); Serial.print(finger.fingerID);
-  Serial.print(" with confidence of "); Serial.println(finger.confidence);
+
+  member& foundMember = getMemberByID(finger.fingerID);
+  Serial.print("name : ");
+  Serial.print(foundMember.name);
+  Serial.print("  ID : "); Serial.print(finger.fingerID);
+  Serial.print(" confidence : "); Serial.println(finger.confidence);
+  // (getMemberByID(finger.fingerID)).inside_status = !((getMemberByID(finger.fingerID)).inside_status);
+  foundMember.inside_status = !foundMember.inside_status;
 
   return finger.fingerID;
 }
@@ -442,13 +465,18 @@ void loop() {
 // }
 
 void handleRoot() {
-  String html = "<html><head><meta http-equiv='refresh' content='10'></head><body>"; // Refresh every 10 seconds
+  String html = "<html><head><meta http-equiv='refresh' content='1'></head><body>"; // Refresh every 10 seconds
   html += "<h1>Member Data</h1>";
   html += "<table border='1'><tr><th>Name</th><th>ID</th><th>Inside Status</th></tr>";
 
   for (const member& m : members) {
     html += "<tr><td>" + m.name + "</td><td>" + String(m.id) + "</td><td>" + (m.inside_status ? "Inside" : "Outside") + "</td></tr>";
   }
+  // for (size_t i = 0; i < members.size(); i++) {
+  //   const member& m = members[i];
+  //   html += "<tr><td>" + String(i) + "</td><td>" + m.name + "</td><td>" + (m.inside_status ? "Inside" : "Outside") + "</td></tr>";
+  // }
+
 
   html += "</table>";
   html += "</body></html>";
